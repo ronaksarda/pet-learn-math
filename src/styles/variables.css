@@ -1,0 +1,117 @@
+/**
+ * src/styles/variables.css
+ * 
+ * Design Tokens for Pet Math Academy.
+ * Defines pastel color themes, high-contrast alternate palettes,
+ * responsive typography scales, and animation timing constants.
+ */
+
+:root {
+  /* ─── Pastel Palette (Default) ─────────────────────────── */
+  --color-bg-main: #fbf9f5;
+  --color-surface: #ffffff;
+  --color-surface-translucent: rgba(255, 255, 255, 0.88);
+  --color-surface-hover: #f3f6fc;
+
+  --color-primary: #5e81f4;
+  --color-primary-light: #e8edff;
+  --color-primary-dark: #3a5edb;
+
+  --color-mint: #70d6a3;
+  --color-mint-light: #e4f9f0;
+  --color-lavender: #b197fc;
+  --color-lavender-light: #f1edff;
+  --color-peach: #ffa07a;
+  --color-peach-light: #fff2ed;
+  --color-sky: #63c5ea;
+  --color-sky-light: #e9f7fd;
+  --color-gold: #f8b84e;
+  --color-gold-light: #fef5e7;
+
+  --color-text-main: #2d3748;
+  --color-text-muted: #718096;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #edf2f7;
+
+  /* State feedback colors */
+  --color-success: #38a169;
+  --color-success-bg: #e6fffa;
+  --color-error: #e53e3e;
+  --color-error-bg: #fff5f5;
+
+  /* Shadows & Elevation */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(149, 157, 165, 0.12);
+  --shadow-lg: 0 14px 36px rgba(100, 110, 140, 0.18);
+  --shadow-pop: 0 6px 0px rgba(0, 0, 0, 0.12);
+
+  /* Typography */
+  --font-family: 'Quicksand', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --base-font-size: 16px;
+  --border-radius-sm: 12px;
+  --border-radius-md: 20px;
+  --border-radius-lg: 28px;
+  --border-radius-pill: 9999px;
+
+  /* Pet Scaling */
+  --pet-scale: 1.0;
+  --animation-duration-fast: 200ms;
+  --animation-duration-normal: 400ms;
+}
+
+/* ─── Accessibility: High-Contrast Palette Override ─────── */
+.high-contrast {
+  --color-bg-main: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-translucent: rgba(30, 41, 59, 0.95);
+  --color-surface-hover: #334155;
+
+  --color-primary: #38bdf8;
+  --color-primary-light: #082f49;
+  --color-primary-dark: #0284c7;
+
+  --color-mint: #34d399;
+  --color-mint-light: #064e3b;
+  --color-lavender: #c084fc;
+  --color-lavender-light: #3b0764;
+  --color-peach: #fb923c;
+  --color-peach-light: #431407;
+  --color-sky: #38bdf8;
+  --color-sky-light: #082f49;
+  --color-gold: #facc15;
+  --color-gold-light: #422006;
+
+  --color-text-main: #f8fafc;
+  --color-text-muted: #cbd5e1;
+  --color-border: #475569;
+  --color-border-subtle: #334155;
+
+  --color-success: #4ade80;
+  --color-success-bg: #052e16;
+  --color-error: #f87171;
+  --color-error-bg: #450a0a;
+
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.9);
+  --shadow-pop: 0 6px 0px rgba(255, 255, 255, 0.3);
+}
+
+/* ─── Accessibility: Dyslexia-Friendly Font ──────────────── */
+.dyslexia-font {
+  --font-family: 'Verdana', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: 1.6;
+}
+
+/* ─── Accessibility: Text Sizing Scales ──────────────────── */
+.text-small {
+  --base-font-size: 14px;
+}
+.text-medium {
+  --base-font-size: 16px;
+}
+.text-large {
+  --base-font-size: 19px;
+}
