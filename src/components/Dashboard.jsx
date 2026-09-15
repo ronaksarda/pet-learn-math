@@ -5,8 +5,14 @@
  * Features:
  * - Active PetDisplay with idle bobbing and layered accessories
  * - Growth stage label & XP progress bar
+ * - Daily streak counter and total quizzes completed stats
  * - Dynamic background theme based on equipped background item
- * - ChapterMap navigation
+ * - ChapterMap navigation with grade filtering
+ * 
+ * HOOKS USED:
+ * - useMemo: Caches the background class and XP progress calculations.
+ *   These only recompute when equippedItems or totalXP change, preventing
+ *   unnecessary recalculations on every parent re-render.
  */
 
 import React, { useMemo } from 'react';
@@ -17,7 +23,7 @@ import { getItemById } from '../data/shopItems.js';
 
 export default function Dashboard({ onSelectChapter, onOpenShop }) {
   const { profile } = useProfile();
-  const { petType, growthStage, totalXP, equippedItems } = profile;
+  const { petType, growthStage, totalXP, equippedItems, streak, totalQuizzes, chapterProgress } = profile;
 
   // Determine active background CSS class from equipped items
   const backgroundClass = useMemo(() => {
@@ -38,8 +44,18 @@ export default function Dashboard({ onSelectChapter, onOpenShop }) {
     if (totalXP < 300) {
       return { current: totalXP - 150, max: 150, percent: ((totalXP - 150) / 150) * 100, nextStage: 'Companion' };
     }
-    return { current: totalXP, max: totalXP, percent: 100, nextStage: 'Max Stage Reached! 👑' };
+    return { current: totalXP, max: totalXP, percent: 100, nextStage: null };
   }, [totalXP]);
+
+  // Count total chapters completed
+  const chaptersCompleted = useMemo(() => {
+    let count = 0;
+    for (const key of Object.keys(chapterProgress || {})) {
+      const ch = chapterProgress[key];
+      if (ch.easy || ch.medium || ch.hard) count++;
+    }
+    return count;
+  }, [chapterProgress]);
 
   return (
     <div className="dashboard-screen">
@@ -65,8 +81,36 @@ export default function Dashboard({ onSelectChapter, onOpenShop }) {
           <p className="xp-text">
             {totalXP >= 300
               ? `Max Growth! (${totalXP} Total XP)`
-              : `${totalXP} XP • Next stage: ${xpProgress.nextStage}`}
+              : `${totalXP} XP \u2022 Next stage: ${xpProgress.nextStage}`}
           </p>
+
+          {/* Stats Row: Streak, Quizzes, Chapters */}
+          <div className="dashboard-stats-row">
+            <div className="dash-stat" title="Daily streak">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2c.5 3.5 2.2 6 4 8 1.5 1.7 2 3.5 2 5.5a8 8 0 1 1-16 0c0-2 .5-3.8 2-5.5 1.8-2 3.5-4.5 4-8z" />
+              </svg>
+              <span className="dash-stat-value">{streak || 0}</span>
+              <span className="dash-stat-label">Streak</span>
+            </div>
+            <div className="dash-stat" title="Total quizzes completed">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <span className="dash-stat-value">{totalQuizzes || 0}</span>
+              <span className="dash-stat-label">Quizzes</span>
+            </div>
+            <div className="dash-stat" title="Chapters touched">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                <line x1="8" y1="2" x2="8" y2="18" />
+                <line x1="16" y1="6" x2="16" y2="22" />
+              </svg>
+              <span className="dash-stat-value">{chaptersCompleted}/12</span>
+              <span className="dash-stat-label">Chapters</span>
+            </div>
+          </div>
 
           <button
             type="button"

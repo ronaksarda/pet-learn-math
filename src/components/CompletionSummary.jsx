@@ -2,8 +2,9 @@
  * src/components/CompletionSummary.jsx
  * 
  * Victory screen presented after finishing 5 questions in a chapter.
- * Shows coins earned, XP gained, completion bonus, and whether the pet
- * evolved to a new growth stage (triggering a celebratory 360 spin).
+ * Shows coins earned, XP gained, completion bonus, performance stars,
+ * and whether the pet evolved to a new growth stage.
+ * Includes CSS confetti animation and "Play Again" option.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,24 +14,50 @@ import { useProfile } from '../context/ProfileContext.jsx';
 export default function CompletionSummary({
   results,
   onReturnToDashboard,
+  onPlayAgain,
   previousGrowthStage
 }) {
   const { profile } = useProfile();
   const [animTrigger, setAnimTrigger] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(true);
 
   const stageEvolved = previousGrowthStage && previousGrowthStage !== profile.growthStage;
 
   useEffect(() => {
-    // If pet leveled up to a new stage, trigger the spin-full celebratory animation!
     if (stageEvolved) {
       setAnimTrigger('spin-full');
     } else {
       setAnimTrigger('celebrate');
     }
+    // Hide confetti after 4 seconds to reduce visual noise
+    const timer = setTimeout(() => setShowConfetti(false), 4000);
+    return () => clearTimeout(timer);
   }, [stageEvolved]);
+
+  // Calculate performance stars (0-3) based on first-try accuracy
+  const performanceStars = results.perfectScore ? 3 : results.bonusCoins > 0 ? 2 : 1;
 
   return (
     <div className="summary-container" role="main">
+      {/* CSS Confetti */}
+      {showConfetti && (
+        <div className="confetti-container" aria-hidden="true">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={i}
+              className="confetti-piece"
+              style={{
+                '--x': `${Math.random() * 100}vw`,
+                '--delay': `${Math.random() * 2}s`,
+                '--color': ['#facc15', '#3b82f6', '#ef4444', '#10b981', '#8b5cf6', '#ec4899'][i % 6],
+                '--rotation': `${Math.random() * 360}deg`,
+                '--duration': `${2 + Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <div className="summary-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -45,8 +72,27 @@ export default function CompletionSummary({
           </h2>
         </div>
         <p style={{ color: 'var(--color-text-muted)', fontWeight: 600, marginTop: '4px' }}>
-          {results.chapterTitle} • <span style={{ textTransform: 'capitalize' }}>{results.difficulty}</span>
+          {results.chapterTitle} &bull; <span style={{ textTransform: 'capitalize' }}>{results.difficulty}</span>
         </p>
+
+        {/* Performance Stars */}
+        <div className="performance-stars" aria-label={`${performanceStars} out of 3 stars`}>
+          {[0, 1, 2].map((i) => (
+            <svg
+              key={i}
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill={i < performanceStars ? '#facc15' : '#e2e8f0'}
+              stroke={i < performanceStars ? '#d97706' : '#cbd5e1'}
+              strokeWidth="1.5"
+              className={i < performanceStars ? 'star-earned-anim' : ''}
+              style={{ animationDelay: `${i * 0.2}s` }}
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          ))}
+        </div>
 
         {/* Pet in celebratory mode */}
         <div style={{ margin: '12px 0' }}>
@@ -96,16 +142,34 @@ export default function CompletionSummary({
         </div>
 
         <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-          Includes +{results.bonusCoins} bonus completion coins!
+          {results.perfectScore
+            ? `Perfect score! +${results.bonusCoins} bonus coins and +${results.bonusXP} bonus XP!`
+            : `Includes +${results.bonusCoins} bonus completion coins!`}
         </p>
 
-        <button
-          type="button"
-          className="primary-cta-btn"
-          onClick={onReturnToDashboard}
-        >
-          Return to Academy
-        </button>
+        {/* Action Buttons */}
+        <div className="summary-actions">
+          <button
+            type="button"
+            className="primary-cta-btn"
+            onClick={onReturnToDashboard}
+          >
+            Return to Academy
+          </button>
+          {onPlayAgain && (
+            <button
+              type="button"
+              className="secondary-cta-btn"
+              onClick={onPlayAgain}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              Play Again
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

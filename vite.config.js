@@ -7,5 +7,15 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split Three.js into its own chunk to reduce main bundle size
+          three: ['three']
+        }
+      }
+    }
   }
 });

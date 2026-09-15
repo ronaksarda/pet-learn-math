@@ -476,18 +476,51 @@ export default function PetCanvas3D({
 
       rootPetGroup.add(headGroup);
 
-      // Flippers / Wings
-      const flipperGeo = new THREE.BoxGeometry(0.14, 0.65, 0.35);
-      flipperGeo.translate(0, -0.28, 0);
+      // Flippers / Hands (Dual-tone: dark outer, snow-white inner lining & cute tips)
+      leftWing = new THREE.Group();
+      leftWing.position.set(-0.72, 0.05, 0.12);
+      leftWing.rotation.set(0.15, 0.2, 0.55);
 
-      leftWing = new THREE.Mesh(flipperGeo, darkMat);
-      leftWing.position.set(-0.68, 0.05, 0.05);
-      leftWing.rotation.set(0, 0, 0.35);
+      // Outer dark flipper
+      const flipperGeo = new THREE.BoxGeometry(0.14, 0.68, 0.36);
+      flipperGeo.translate(0, -0.3, 0);
+      const leftWingOuter = new THREE.Mesh(flipperGeo, darkMat);
+      leftWingOuter.castShadow = true;
+      leftWing.add(leftWingOuter);
+
+      // Inner white flipper lining (facing front/belly)
+      const flipperInnerGeo = new THREE.BoxGeometry(0.1, 0.62, 0.28);
+      flipperInnerGeo.translate(0.04, -0.28, 0.04);
+      const leftWingInner = new THREE.Mesh(flipperInnerGeo, snowMat);
+      leftWing.add(leftWingInner);
+
+      // Cute white tip / hand highlight
+      const tipGeo = new THREE.SphereGeometry(0.12, 14, 14);
+      const leftTip = new THREE.Mesh(tipGeo, snowMat);
+      leftTip.scale.set(0.8, 0.9, 1.2);
+      leftTip.position.set(0.02, -0.58, 0.02);
+      leftWing.add(leftTip);
+
       rootPetGroup.add(leftWing);
 
-      rightWing = new THREE.Mesh(flipperGeo, darkMat);
-      rightWing.position.set(0.68, 0.05, 0.05);
-      rightWing.rotation.set(0, 0, -0.35);
+      rightWing = new THREE.Group();
+      rightWing.position.set(0.72, 0.05, 0.12);
+      rightWing.rotation.set(0.15, -0.2, -0.55);
+
+      const rightWingOuter = new THREE.Mesh(flipperGeo, darkMat);
+      rightWingOuter.castShadow = true;
+      rightWing.add(rightWingOuter);
+
+      const rightFlipperInnerGeo = new THREE.BoxGeometry(0.1, 0.62, 0.28);
+      rightFlipperInnerGeo.translate(-0.04, -0.28, 0.04);
+      const rightWingInner = new THREE.Mesh(rightFlipperInnerGeo, snowMat);
+      rightWing.add(rightWingInner);
+
+      const rightTip = new THREE.Mesh(tipGeo, snowMat);
+      rightTip.scale.set(0.8, 0.9, 1.2);
+      rightTip.position.set(-0.02, -0.58, 0.02);
+      rightWing.add(rightTip);
+
       rootPetGroup.add(rightWing);
 
       // Orange Webbed Feet
@@ -901,11 +934,11 @@ export default function PetCanvas3D({
             rightEar.rotation.z = -0.7 - Math.sin(time * 12) * 0.1;
           }
 
-          // Penguin wings flap
+          // Penguin wings/flippers flap
           if (leftWing && rightWing) {
-            const flap = Math.sin(time * 3.5) * 0.15;
-            leftWing.rotation.z = 0.35 + flap;
-            rightWing.rotation.z = -0.35 - flap;
+            const flap = Math.sin(time * 3.5) * 0.18;
+            leftWing.rotation.z = 0.55 + flap;
+            rightWing.rotation.z = -0.55 - flap;
           }
 
           // Rainbow Aura rotation

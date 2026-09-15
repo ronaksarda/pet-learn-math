@@ -51,8 +51,10 @@ export default function App() {
   const settings = profile.comfortSettings || {};
   const rootClasses = [
     'app-container',
+    settings.darkMode ? 'dark-mode' : '',
     settings.highContrast ? 'high-contrast' : '',
     settings.dyslexiaFont ? 'dyslexia-font' : '',
+    settings.adhdFocus ? 'adhd-focus-mode' : '',
     settings.reducedMotion ? 'reduced-motion' : '',
     `text-${settings.textSize || 'medium'}`
   ]
@@ -85,6 +87,13 @@ export default function App() {
     setSelectedDifficulty(null);
     setQuizResults(null);
     setCurrentScreen('dashboard');
+  };
+
+  // Replay the same chapter + difficulty
+  const handlePlayAgain = () => {
+    setQuizResults(null);
+    setPreviousStage(profile.growthStage);
+    setCurrentScreen('question');
   };
 
   return (
@@ -220,6 +229,7 @@ export default function App() {
             results={quizResults}
             previousGrowthStage={previousStage}
             onReturnToDashboard={handleReturnToDashboard}
+            onPlayAgain={handlePlayAgain}
           />
         )}
 

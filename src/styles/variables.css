@@ -46,7 +46,7 @@
   --shadow-pop: 0 6px 0px rgba(0, 0, 0, 0.12);
 
   /* Typography */
-  --font-family: 'Quicksand', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family: 'Lexend', 'Nunito', 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --base-font-size: 16px;
   --border-radius-sm: 12px;
   --border-radius-md: 20px;
@@ -57,6 +57,44 @@
   --pet-scale: 1.0;
   --animation-duration-fast: 200ms;
   --animation-duration-normal: 400ms;
+}
+
+/* ─── Sleek Modern Dark Mode Palette ────────────────────── */
+.dark-mode {
+  --color-bg-main: #0b0f19;
+  --color-surface: #131b2e;
+  --color-surface-translucent: rgba(19, 27, 46, 0.9);
+  --color-surface-hover: #1c2742;
+
+  --color-primary: #6366f1;
+  --color-primary-light: #1e1b4b;
+  --color-primary-dark: #4f46e5;
+
+  --color-mint: #10b981;
+  --color-mint-light: #064e3b;
+  --color-lavender: #a855f7;
+  --color-lavender-light: #3b0764;
+  --color-peach: #f97316;
+  --color-peach-light: #431407;
+  --color-sky: #06b6d4;
+  --color-sky-light: #083344;
+  --color-gold: #f59e0b;
+  --color-gold-light: #451a03;
+
+  --color-text-main: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-border: #1f293d;
+  --color-border-subtle: #162035;
+
+  --color-success: #10b981;
+  --color-success-bg: #064e3b;
+  --color-error: #ef4444;
+  --color-error-bg: #450a0a;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 6px 0px rgba(0, 0, 0, 0.6);
 }
 
 /* ─── Accessibility: High-Contrast Palette Override ─────── */

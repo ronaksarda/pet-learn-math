@@ -131,6 +131,14 @@ export function ProfileProvider({ children }) {
     dispatch({ type: 'UPDATE_SETTINGS', payload: partialSettings });
   }, []);
 
+  const setGrade = useCallback((grade) => {
+    dispatch({ type: 'SET_GRADE', payload: grade });
+  }, []);
+
+  const recordQuizCompletion = useCallback(() => {
+    dispatch({ type: 'RECORD_QUIZ_COMPLETION' });
+  }, []);
+
   const value = {
     currentUser,
     profile,
@@ -144,7 +152,9 @@ export function ProfileProvider({ children }) {
     equipItem,
     unequipItem,
     completeChapter,
-    updateSettings
+    updateSettings,
+    setGrade,
+    recordQuizCompletion
   };
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;

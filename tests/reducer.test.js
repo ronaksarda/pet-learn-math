@@ -119,5 +119,40 @@ describe('Profile Reducer & Growth Stages (TDD)', () => {
       expect(next.comfortSettings.textSize).toBe('large');
       expect(next.comfortSettings.reducedMotion).toBe(false); // remains unchanged
     });
+
+    it('SET_GRADE stores the selected grade level', () => {
+      const state = initialProfileState;
+      const next = profileReducer(state, { type: 'SET_GRADE', payload: '3' });
+      expect(next.grade).toBe('3');
+    });
+
+    it('SET_GRADE can be set to null for all grades', () => {
+      const state = { ...initialProfileState, grade: '2' };
+      const next = profileReducer(state, { type: 'SET_GRADE', payload: null });
+      expect(next.grade).toBe(null);
+    });
+
+    it('RECORD_QUIZ_COMPLETION sets streak to 1 on first play', () => {
+      const state = initialProfileState;
+      const next = profileReducer(state, { type: 'RECORD_QUIZ_COMPLETION' });
+      expect(next.streak).toBe(1);
+      expect(next.totalQuizzes).toBe(1);
+      expect(next.lastPlayDate).toBeTruthy();
+    });
+
+    it('RECORD_QUIZ_COMPLETION keeps streak on same-day play', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const state = { ...initialProfileState, streak: 3, lastPlayDate: today, totalQuizzes: 5 };
+      const next = profileReducer(state, { type: 'RECORD_QUIZ_COMPLETION' });
+      expect(next.streak).toBe(3); // same day, no increment
+      expect(next.totalQuizzes).toBe(6);
+    });
+
+    it('RECORD_QUIZ_COMPLETION resets streak after gap', () => {
+      const state = { ...initialProfileState, streak: 5, lastPlayDate: '2024-01-01', totalQuizzes: 10 };
+      const next = profileReducer(state, { type: 'RECORD_QUIZ_COMPLETION' });
+      expect(next.streak).toBe(1); // gap > 1 day
+      expect(next.totalQuizzes).toBe(11);
+    });
   });
 });

@@ -44,8 +44,15 @@ export default function PetSelect({ onPetSelected }) {
   return (
     <div className="auth-container" style={{ maxWidth: '640px' }} role="main">
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--color-primary)' }}>
-          Choose Your Math Companion! 🐾
+        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          Choose Your Math Companion!
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <ellipse cx="12" cy="16" rx="5" ry="4" />
+            <ellipse cx="6" cy="11" rx="2.5" ry="3.5" />
+            <ellipse cx="18" cy="11" rx="2.5" ry="3.5" />
+            <ellipse cx="9" cy="6" rx="2" ry="3" />
+            <ellipse cx="15" cy="6" rx="2" ry="3" />
+          </svg>
         </h1>
         <p style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>
           Your companion will grow, wear fun accessories, and level up alongside you!
@@ -84,10 +91,16 @@ export default function PetSelect({ onPetSelected }) {
                 background: 'var(--color-primary-light)',
                 color: 'var(--color-primary)',
                 fontWeight: 800,
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
             >
-              Adopt Me! 💖
+              Adopt Me!
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#ec4899">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
             </span>
           </button>
         ))}

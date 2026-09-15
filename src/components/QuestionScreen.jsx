@@ -3,29 +3,29 @@
  * 
  * Child-friendly, tactile math quiz arena.
  * Includes interactive SVG counting board, stepping stone progress trail,
- * active 3D cheering pet companion, and 3D toy-block answer buttons.
+ * active 3D cheering pet companion, 3D toy-block answer buttons,
+ * per-question timer, and AI-powered hints (via Groq).
+ * 
+ * HOOKS USED:
+ * - useState: Manages quiz state (current question, feedback, retry tracking).
+ *   Each piece of state triggers a targeted re-render when it changes.
+ * - useEffect: Syncs side effects (voice read-aloud, timer ticking) with
+ *   the current question index. Cleaned up automatically on unmount.
+ * - useRef: Stores mutable values (session rewards, timer interval) that
+ *   persist across renders WITHOUT causing re-renders when mutated.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useProfile } from '../context/ProfileContext.jsx';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis.js';
 import { generateChapterQuestions } from '../data/questions.js';
+import { generateSmartMathHint } from '../utils/mathHints.js';
 import MathVisualCounter from './MathVisualCounter.jsx';
 import PetCanvas3D from './PetCanvas3D.jsx';
 
 // Calibrated coin & XP rewards per question
-const COIN_REWARDS = {
-  easy: 2,
-  medium: 4,
-  hard: 6
-};
-
-const XP_REWARDS = {
-  easy: 5,
-  medium: 10,
-  hard: 15
-};
-
+const COIN_REWARDS = { easy: 2, medium: 4, hard: 6 };
+const XP_REWARDS = { easy: 5, medium: 10, hard: 15 };
 const PERFECT_BONUS = {
   easy: { coins: 5, xp: 5 },
   medium: { coins: 8, xp: 10 },
@@ -40,7 +40,7 @@ export default function QuestionScreen({
   onExitQuiz,
   onTriggerCelebrate
 }) {
-  const { profile, addCoins, addXP, completeChapter } = useProfile();
+  const { profile, addCoins, addXP, completeChapter, recordQuizCompletion } = useProfile();
   const { speak, isSupported } = useSpeechSynthesis();
 
   // Generate 5 questions once on component mount
@@ -51,56 +51,133 @@ export default function QuestionScreen({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [feedbackState, setFeedbackState] = useState(null); // 'correct' | 'retry' | null
-  const [retryOptions, setRetryOptions] = useState(new Set()); // Options already attempted incorrectly
+  const [retryOptions, setRetryOptions] = useState(new Set());
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [celebratePet, setCelebratePet] = useState(false);
+
+  // Contextual smart hint state
+  const [hintText, setHintText] = useState(null);
+
+  // Per-question timer
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef(null);
 
   // Cumulative session reward tracking
   const sessionRewardsRef = useRef({ coins: 0, xp: 0, firstTryCorrect: 0 });
 
   const currentQ = questions[currentIndex];
 
-  // Auto-trigger voice read-aloud when question mounts, if setting active
+  // Start/restart timer & reset hint on each new question
+  useEffect(() => {
+    setElapsed(0);
+    setHintText(null);
+    timerRef.current = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [currentIndex]);
+
+  // Auto-trigger voice read-aloud when question mounts
   useEffect(() => {
     if (currentQ && profile.comfortSettings?.readAloud) {
-      speak(`${currentQ.questionText || currentQ.prompt}. Choose an answer.`);
+      speak(currentQ.questionText || currentQ.prompt);
     }
   }, [currentIndex, currentQ, profile.comfortSettings?.readAloud, speak]);
+
+  const handleRequestHint = () => {
+    if (hintText) return;
+    const smartHint = generateSmartMathHint(currentQ);
+    setHintText(smartHint);
+    if (profile.comfortSettings?.readAloud) {
+      speak(`Hint: ${smartHint}`);
+    }
+  };
+
+  const handleSkipQuestion = () => {
+    if (isAdvancing) return;
+    setIsAdvancing(true);
+
+    if (profile.comfortSettings?.readAloud) {
+      speak('Skipping to next question.');
+    }
+
+    setTimeout(() => {
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+        setSelectedOption(null);
+        setFeedbackState(null);
+        setCelebratePet(false);
+        setRetryOptions(new Set());
+        setIsAdvancing(false);
+        setHintText(null);
+      } else {
+        // Complete quiz with what was earned
+        const totalCoins = sessionRewardsRef.current.coins;
+        const totalXP = sessionRewardsRef.current.xp;
+
+        addCoins(totalCoins);
+        addXP(totalXP);
+        if (sessionRewardsRef.current.firstTryCorrect >= 3) {
+          completeChapter(chapterKey, difficulty);
+        }
+        recordQuizCompletion();
+
+        onCompleteQuiz({
+          coinsEarned: totalCoins,
+          xpEarned: totalXP,
+          bonusCoins: 0,
+          bonusXP: 0,
+          perfectScore: false,
+          chapterTitle,
+          difficulty
+        });
+      }
+    }, 400);
+  };
+
+  // Format timer as MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Handle user selecting an answer
   const handleSelectOption = (index) => {
     if (isAdvancing || retryOptions.has(index)) return;
 
     setSelectedOption(index);
+    const isFirstAttempt = retryOptions.size === 0;
 
     if (index === currentQ.correctIndex) {
-      // ─── CORRECT ANSWER ──────────────────────────────────
+      // ─── CORRECT ANSWER ───────────────────────────────────
       setFeedbackState('correct');
-      setCelebratePet(true);
       setIsAdvancing(true);
+      setCelebratePet(true);
+      clearInterval(timerRef.current);
 
-      const earnedCoins = COIN_REWARDS[difficulty] || 2;
-      const earnedXP = XP_REWARDS[difficulty] || 5;
+      const coinReward = COIN_REWARDS[difficulty] || 2;
+      const xpReward = XP_REWARDS[difficulty] || 5;
+
+      // Track streak bonus (+2 coins per streak day, max +10)
+      const streakBonus = Math.min(10, (profile.streak || 0) * 2);
+      const earnedCoins = isFirstAttempt ? coinReward + streakBonus : Math.ceil(coinReward / 2);
+      const earnedXP = isFirstAttempt ? xpReward : Math.ceil(xpReward / 2);
 
       sessionRewardsRef.current.coins += earnedCoins;
       sessionRewardsRef.current.xp += earnedXP;
-
-      // Track if answered on the very first try for bonus calculation
-      if (retryOptions.size === 0) {
+      if (isFirstAttempt) {
         sessionRewardsRef.current.firstTryCorrect += 1;
       }
 
-      // Trigger global celebration if callback passed
-      if (onTriggerCelebrate) {
-        onTriggerCelebrate();
-      }
+      if (onTriggerCelebrate) onTriggerCelebrate();
 
-      // Voice prompt on correct if read-aloud active
       if (profile.comfortSettings?.readAloud) {
         speak('Great job!');
       }
 
-      // Brief delay before advancing to let learner celebrate
+      // Brief delay before advancing
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex((prev) => prev + 1);
@@ -109,26 +186,26 @@ export default function QuestionScreen({
           setCelebratePet(false);
           setRetryOptions(new Set());
           setIsAdvancing(false);
+          setHintText(null);
         } else {
-          // Finished all 5 questions!
+          // Finished all questions!
           const perfect = sessionRewardsRef.current.firstTryCorrect === 5;
           const bonus = perfect ? PERFECT_BONUS[difficulty] || { coins: 5, xp: 5 } : { coins: 0, xp: 0 };
-          const bonusCoins = bonus.coins;
-          const bonusXP = bonus.xp;
 
-          const totalCoins = sessionRewardsRef.current.coins + bonusCoins;
-          const totalXP = sessionRewardsRef.current.xp + bonusXP;
+          const totalCoins = sessionRewardsRef.current.coins + bonus.coins;
+          const totalXP = sessionRewardsRef.current.xp + bonus.xp;
 
           // Commit rewards to global profile context
           addCoins(totalCoins);
           addXP(totalXP);
           completeChapter(chapterKey, difficulty);
+          recordQuizCompletion();
 
           onCompleteQuiz({
             coinsEarned: totalCoins,
             xpEarned: totalXP,
-            bonusCoins,
-            bonusXP,
+            bonusCoins: bonus.coins,
+            bonusXP: bonus.xp,
             perfectScore: perfect,
             chapterTitle,
             difficulty
@@ -189,13 +266,22 @@ export default function QuestionScreen({
           })}
         </div>
 
-        {/* Current Quiz Coins Earned Indicator */}
-        <div className="quiz-session-coins">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" fill="#facc15" stroke="#ca8a04" strokeWidth="2" />
-            <circle cx="12" cy="12" r="7" stroke="#eab308" strokeWidth="1.5" strokeDasharray="3 2" />
-          </svg>
-          <span>+{sessionRewardsRef.current.coins}</span>
+        {/* Timer & Coins */}
+        <div className="quiz-top-right">
+          <div className="quiz-timer" title="Time on this question">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>{formatTime(elapsed)}</span>
+          </div>
+          <div className="quiz-session-coins">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="#facc15" stroke="#ca8a04" strokeWidth="2" />
+              <circle cx="12" cy="12" r="7" stroke="#eab308" strokeWidth="1.5" strokeDasharray="3 2" />
+            </svg>
+            <span>+{sessionRewardsRef.current.coins}</span>
+          </div>
         </div>
       </div>
 
@@ -203,24 +289,68 @@ export default function QuestionScreen({
       <div className="quiz-arena-row">
         {/* Main Question Card with Visual Counting Board */}
         <div className="quiz-play-card" aria-live="polite">
-          {/* Interactive Visual Counter (Touch-to-Count tokens) */}
+          {/* Interactive Visual Counter */}
           <MathVisualCounter questionText={currentQ.questionText || currentQ.prompt} />
 
-          {/* Read Aloud Audio Assist Button */}
-          {isSupported && (
+          {/* Button Row: Read Aloud + Hint + Skip */}
+          <div className="quiz-assist-row">
+            {isSupported && (
+              <button
+                type="button"
+                className="speech-assist-btn"
+                onClick={() => speak(currentQ.questionText)}
+                aria-label="Read question out loud"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+                <span>Listen</span>
+              </button>
+            )}
+
             <button
               type="button"
-              className="speech-assist-btn"
-              onClick={() => speak(currentQ.questionText)}
-              aria-label="Read question out loud"
+              className="hint-assist-btn"
+              onClick={handleRequestHint}
+              disabled={!!hintText}
+              aria-label="Get a hint"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
-              <span>Listen</span>
+              <span>{hintText ? 'Hint Given' : 'Get Hint'}</span>
             </button>
+
+            <button
+              type="button"
+              className="skip-assist-btn"
+              onClick={handleSkipQuestion}
+              disabled={isAdvancing}
+              aria-label="Skip this question"
+              title="Skip to next question"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 4 15 12 5 20 5 4" />
+                <line x1="19" y1="5" x2="19" y2="19" />
+              </svg>
+              <span>Skip</span>
+            </button>
+          </div>
+
+          {/* Hint Display */}
+          {hintText && (
+            <div className="ai-hint-bubble" role="status">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <p>{hintText}</p>
+            </div>
           )}
 
           {/* 4 Chunky Tactile 3D Toy Answer Buttons */}
@@ -246,12 +376,17 @@ export default function QuestionScreen({
                   <span className="toy-option-text">{opt}</span>
                   {isCorrect && (
                     <span className="toy-option-icon check-icon" aria-hidden="true">
-                      ✓
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     </span>
                   )}
                   {isRetried && (
                     <span className="toy-option-icon retry-icon" aria-hidden="true">
-                      ↺
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="1 4 1 10 7 10" />
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                      </svg>
                     </span>
                   )}
                 </button>
@@ -271,7 +406,12 @@ export default function QuestionScreen({
 
           {feedbackState === 'retry' && (
             <div className="child-feedback-banner retry" role="status">
-              <span>💡 Almost! Tap the items to count or try another answer!</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span>Almost! Tap the items to count or try another answer!</span>
             </div>
           )}
         </div>
@@ -281,10 +421,10 @@ export default function QuestionScreen({
           <aside className="quiz-companion-dock" aria-label="Your Cheering Companion">
             <div className="companion-speech-bubble">
               {feedbackState === 'correct'
-                ? 'Yay! You got it right! 🎉'
+                ? 'Yay! You got it right!'
                 : feedbackState === 'retry'
-                ? 'You can do it! Try again! 💪'
-                : 'I believe in you! 🐾'}
+                ? 'You can do it! Try again!'
+                : 'I believe in you!'}
             </div>
             <div className="companion-canvas-wrapper">
               <PetCanvas3D

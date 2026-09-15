@@ -43,9 +43,13 @@ export function calculateGrowthStage(xp = 0) {
 /** Initial default learner profile */
 export const initialProfileState = {
   petType: null,
+  grade: null,           // 'K' | '1' | '2' | '3' | '4' | '5' — selected class/grade level
   totalXP: 0,
   coins: 0,
   growthStage: 'baby',
+  streak: 0,             // consecutive days played
+  lastPlayDate: null,    // ISO date string of last quiz completion
+  totalQuizzes: 0,       // lifetime quiz completions
   chapterProgress: {
     counting: { easy: false, medium: false, hard: false },
     addSub: { easy: false, medium: false, hard: false },
@@ -55,9 +59,11 @@ export const initialProfileState = {
   ownedItems: [],
   equippedItems: [],
   comfortSettings: {
+    darkMode: false,
     reducedMotion: false,
     highContrast: false,
     dyslexiaFont: false,
+    adhdFocus: false,
     textSize: 'medium',
     readAloud: false
   }
@@ -181,6 +187,42 @@ export function profileReducer(state, action) {
           ...state.comfortSettings,
           ...action.payload
         }
+      };
+    }
+
+    case 'SET_GRADE': {
+      return {
+        ...state,
+        grade: action.payload
+      };
+    }
+
+    case 'RECORD_QUIZ_COMPLETION': {
+      // Calculate streak: if last play was yesterday, increment; if today, keep; else reset to 1
+      const today = new Date().toISOString().slice(0, 10);
+      const lastDate = state.lastPlayDate;
+      let newStreak = 1;
+
+      if (lastDate) {
+        const lastMs = new Date(lastDate).getTime();
+        const todayMs = new Date(today).getTime();
+        const daysDiff = Math.round((todayMs - lastMs) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff === 0) {
+          // Already played today — keep current streak
+          newStreak = state.streak;
+        } else if (daysDiff === 1) {
+          // Consecutive day — increment
+          newStreak = state.streak + 1;
+        }
+        // daysDiff > 1 → streak resets to 1 (default)
+      }
+
+      return {
+        ...state,
+        streak: newStreak,
+        lastPlayDate: today,
+        totalQuizzes: (state.totalQuizzes || 0) + 1
       };
     }
 
