@@ -15,13 +15,15 @@
  *   persist across renders WITHOUT causing re-renders when mutated.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useProfile } from '../context/ProfileContext.jsx';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis.js';
 import { generateChapterQuestions } from '../data/questions.js';
 import { generateSmartMathHint } from '../utils/mathHints.js';
+import { playCorrect, playRetry, playClick } from '../utils/sfx.js';
 import MathVisualCounter from './MathVisualCounter.jsx';
 import PetCanvas3D from './PetCanvas3D.jsx';
+import MathScratchpad from './MathScratchpad.jsx';
 
 // Calibrated coin & XP rewards per question
 const COIN_REWARDS = { easy: 2, medium: 4, hard: 6 };
@@ -57,6 +59,8 @@ export default function QuestionScreen({
 
   // Contextual smart hint state
   const [hintText, setHintText] = useState(null);
+  // In-quiz interactive math scratchpad
+  const [showScratchpad, setShowScratchpad] = useState(false);
 
   // Per-question timer
   const [elapsed, setElapsed] = useState(0);
@@ -87,6 +91,7 @@ export default function QuestionScreen({
 
   const handleRequestHint = () => {
     if (hintText) return;
+    playClick();
     const smartHint = generateSmartMathHint(currentQ);
     setHintText(smartHint);
     if (profile.comfortSettings?.readAloud) {
@@ -96,6 +101,7 @@ export default function QuestionScreen({
 
   const handleSkipQuestion = () => {
     if (isAdvancing) return;
+    playClick();
     setIsAdvancing(true);
 
     if (profile.comfortSettings?.readAloud) {
@@ -156,6 +162,7 @@ export default function QuestionScreen({
       setIsAdvancing(true);
       setCelebratePet(true);
       clearInterval(timerRef.current);
+      playCorrect();
 
       const coinReward = COIN_REWARDS[difficulty] || 2;
       const xpReward = XP_REWARDS[difficulty] || 5;
@@ -216,12 +223,44 @@ export default function QuestionScreen({
       // ─── INCORRECT ANSWER (Friendly Retry) ───────────────
       setFeedbackState('retry');
       setRetryOptions((prev) => new Set([...prev, index]));
+      playRetry();
 
       if (profile.comfortSettings?.readAloud) {
         speak('Almost! Try counting again.');
       }
     }
   };
+
+  // ─── KEYBOARD & SWITCH ACCESSIBILITY SHORTCUTS ─────────────────
+  // Keys 1-4 for answers, H for hint, S for skip, Space for audio
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore when focused in text inputs
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)) return;
+
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const optIndex = parseInt(e.key, 10) - 1;
+        if (currentQ && optIndex < currentQ.options.length) {
+          e.preventDefault();
+          handleSelectOption(optIndex);
+        }
+      } else if (e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        handleRequestHint();
+      } else if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSkipQuestion();
+      } else if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        if (isSupported && currentQ) {
+          speak(currentQ.questionText || currentQ.prompt);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentQ, isAdvancing, retryOptions, hintText, isSupported, speak, currentIndex]);
 
   return (
     <div className="question-screen-container" role="main">
@@ -292,14 +331,15 @@ export default function QuestionScreen({
           {/* Interactive Visual Counter */}
           <MathVisualCounter questionText={currentQ.questionText || currentQ.prompt} />
 
-          {/* Button Row: Read Aloud + Hint + Skip */}
+          {/* Button Row: Read Aloud + Hint + Skip + Scratchpad */}
           <div className="quiz-assist-row">
             {isSupported && (
               <button
                 type="button"
                 className="speech-assist-btn"
                 onClick={() => speak(currentQ.questionText)}
-                aria-label="Read question out loud"
+                aria-label="Read question out loud (Keyboard: Space)"
+                title="Read out loud [Space]"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -315,7 +355,8 @@ export default function QuestionScreen({
               className="hint-assist-btn"
               onClick={handleRequestHint}
               disabled={!!hintText}
-              aria-label="Get a hint"
+              aria-label="Get a hint (Keyboard: H)"
+              title="Get a hint [H]"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -330,8 +371,8 @@ export default function QuestionScreen({
               className="skip-assist-btn"
               onClick={handleSkipQuestion}
               disabled={isAdvancing}
-              aria-label="Skip this question"
-              title="Skip to next question"
+              aria-label="Skip this question (Keyboard: S)"
+              title="Skip to next question [S]"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="5 4 15 12 5 20 5 4" />
@@ -339,7 +380,27 @@ export default function QuestionScreen({
               </svg>
               <span>Skip</span>
             </button>
+
+            <button
+              type="button"
+              className={`scratchpad-assist-btn ${showScratchpad ? 'active' : ''}`}
+              onClick={() => {
+                playClick();
+                setShowScratchpad((prev) => !prev);
+              }}
+              aria-label="Toggle scratchpad drawing canvas"
+              title="Draw math work & tally marks"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              <span>{showScratchpad ? 'Close Pad' : 'Scratchpad'}</span>
+            </button>
           </div>
+
+          {/* In-Quiz Interactive Scratchpad */}
+          <MathScratchpad isOpen={showScratchpad} onClose={() => setShowScratchpad(false)} />
 
           {/* Hint Display */}
           {hintText && (
@@ -373,6 +434,7 @@ export default function QuestionScreen({
                   onClick={() => handleSelectOption(idx)}
                   aria-label={`Option ${idx + 1}: ${opt}`}
                 >
+                  <span className="toy-key-badge" aria-hidden="true">{idx + 1}</span>
                   <span className="toy-option-text">{opt}</span>
                   {isCorrect && (
                     <span className="toy-option-icon check-icon" aria-hidden="true">
@@ -393,6 +455,7 @@ export default function QuestionScreen({
               );
             })}
           </div>
+
 
           {/* Dynamic Tactile Feedback Banner */}
           {feedbackState === 'correct' && (

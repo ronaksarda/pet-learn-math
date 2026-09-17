@@ -137,6 +137,12 @@ export default function App() {
               <span className="coin-amount">{profile.coins}</span>
             </div>
 
+            {/* Daily Streak Display */}
+            <div className="streak-pill" aria-label={`${profile.streak || 0} day learning streak`} title="Daily Learning Streak">
+              <span className="streak-fire-icon" aria-hidden="true">🔥</span>
+              <span className="streak-count">{profile.streak || 0}</span>
+            </div>
+
             {/* Shop Button */}
             <button
               type="button"

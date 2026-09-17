@@ -15,6 +15,22 @@
   padding: 0;
 }
 
+/* Prevent double-tap zoom on all interactive elements (mobile a11y) */
+button, a, input, select, label, [role="button"], [role="radio"] {
+  touch-action: manipulation;
+}
+
+/* ponytail: OS-level reduced motion — respects system preferences even if
+   the user hasn't toggled it in-app. Covers ALL animations at once. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   font-family: var(--font-family);
   font-size: var(--base-font-size);
@@ -177,6 +193,34 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #facc15;
   color: #fef08a;
   box-shadow: 0 4px 0 #a16207;
+}
+
+.streak-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff7ed;
+  border: 2.5px solid #fb923c;
+  padding: 8px 16px;
+  border-radius: var(--border-radius-pill);
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #c2410c;
+  box-shadow: 0 4px 0 #ea580c;
+  touch-action: manipulation;
+}
+
+.streak-fire-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.dark-mode .streak-pill,
+.high-contrast .streak-pill {
+  background: #2a1205;
+  border-color: #fb923c;
+  color: #fed7aa;
+  box-shadow: 0 4px 0 #c2410c;
 }
 
 .icon-btn {
@@ -379,16 +423,13 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin-full 0.85s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
 
-/* Reduced Motion Mode Override */
-.reduced-motion .idle-bob,
-.reduced-motion .pet-drop-shadow {
-  animation: none !important;
-}
-
-.reduced-motion .celebrate,
-.reduced-motion .spin-full {
-  animation: none !important;
-  transition: none !important;
+/* Reduced Motion Mode Override (in-app toggle) */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* ─── Dashboard Screen & Backgrounds ────────────────────── */
@@ -945,14 +986,15 @@ h1, h2, h3, h4, h5, h6 {
   gap: 6px;
   padding: 8px 18px;
   border-radius: 9999px;
-  background: #ffffff;
-  border: 2px solid #e2e8f0;
-  box-shadow: 0 4px 0 #cbd5e1;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  box-shadow: 0 4px 0 var(--color-border);
   font-weight: 800;
   font-size: 0.95rem;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.12s ease;
+  touch-action: manipulation;
 }
 .quiz-exit-button:hover {
   color: #ef4444;
@@ -969,11 +1011,11 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-surface-translucent);
   backdrop-filter: blur(8px);
   padding: 8px 22px;
   border-radius: 9999px;
-  border: 2.5px solid #e2e8f0;
+  border: 2.5px solid var(--color-border);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
 }
 
@@ -992,15 +1034,15 @@ h1, h2, h3, h4, h5, h6 {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #f1f5f9;
-  border: 2.5px solid #cbd5e1;
-  box-shadow: 0 3px 0 #94a3b8;
+  background: var(--color-surface-hover);
+  border: 2.5px solid var(--color-border);
+  box-shadow: 0 3px 0 var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
   font-size: 0.95rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1060,11 +1102,11 @@ h1, h2, h3, h4, h5, h6 {
   flex: 1;
   min-width: 0;
   max-width: 680px;
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 32px;
   padding: 36px 32px;
-  border: 3px solid #e2e8f0;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.08), 0 5px 0 #cbd5e1;
+  border: 3px solid var(--color-border);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.08), 0 5px 0 var(--color-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1344,22 +1386,22 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 10px;
   width: 230px;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--color-surface-translucent);
   backdrop-filter: blur(10px);
-  border: 3px solid #e2e8f0;
+  border: 3px solid var(--color-border);
   border-radius: 28px;
   padding: 18px 14px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06), 0 4px 0 #cbd5e1;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06), 0 4px 0 var(--color-border);
 }
 
 .companion-speech-bubble {
-  background: #eff6ff;
-  border: 2px solid #bfdbfe;
+  background: var(--color-primary-light);
+  border: 2px solid var(--color-primary);
   border-radius: 16px;
   padding: 8px 12px;
   font-size: 0.9rem;
   font-weight: 800;
-  color: #1e40af;
+  color: var(--color-text-main);
   text-align: center;
   position: relative;
   box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
@@ -1742,6 +1784,13 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-block;
   width: 52px;
   height: 28px;
+  flex-shrink: 0;
+}
+
+/* Keyboard focus ring for toggle switches */
+.toggle-switch input:focus-visible + .toggle-slider {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 .toggle-switch input {
@@ -2446,7 +2495,7 @@ body.dark-mode {
   color: var(--color-text-main);
 }
 
-.dark-mode .top-nav {
+.dark-mode .top-nav-bar {
   background: rgba(19, 27, 46, 0.92);
   border-bottom-color: var(--color-border);
 }
@@ -2503,8 +2552,7 @@ body.dark-mode {
 }
 
 .dark-mode .quiz-top-bar {
-  background: #131b2e;
-  border-color: #1f293d;
+  background: transparent;
 }
 
 .dark-mode .quiz-exit-button {
@@ -2525,14 +2573,16 @@ body.dark-mode {
   color: #fef08a;
 }
 
-.dark-mode .option-toy-btn {
+.dark-mode .option-toy-btn,
+.dark-mode .toy-option-btn {
   background: #1e293b;
   border-color: #334155;
   box-shadow: 0 5px 0 #0f172a;
   color: #f1f5f9;
 }
 
-.dark-mode .option-toy-btn:hover:not(:disabled) {
+.dark-mode .option-toy-btn:hover:not(:disabled),
+.dark-mode .toy-option-btn:hover:not(:disabled) {
   background: #334155;
   border-color: #6366f1;
 }
@@ -2633,26 +2683,31 @@ body.dark-mode {
 
 /* Mobile Screens (<= 768px) */
 @media screen and (max-width: 768px) {
-  .top-nav {
+  .top-nav-bar {
     padding: 8px 12px;
+    gap: 8px;
   }
 
-  .nav-brand-title {
+  .brand-title {
     font-size: 1.1rem;
   }
 
-  .nav-brand-tag {
+  .learner-badge {
     display: none;
   }
 
-  .nav-user-pill {
-    padding: 4px 8px;
+  .coin-pill {
+    padding: 4px 10px;
     font-size: 0.85rem;
   }
 
-  .nav-coin-pill {
-    padding: 4px 10px;
-    font-size: 0.85rem;
+  .icon-btn, .toy-nav-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .nav-actions {
+    gap: 8px;
   }
 
   .dashboard-container {
@@ -2703,12 +2758,14 @@ body.dark-mode {
   }
 
   .quiz-top-bar {
-    padding: 10px 12px;
-    gap: 8px;
+    padding: 6px 0;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
   .stepping-stones-trail {
     gap: 4px;
+    padding: 6px 12px;
   }
 
   .trail-stone {
@@ -2726,19 +2783,49 @@ body.dark-mode {
     border-radius: var(--border-radius-md);
   }
 
-  .math-visual-counter {
-    font-size: 1.25rem;
+  .clean-question-prompt {
+    font-size: 1.35rem;
   }
 
-  .options-2x2-grid {
+  .clean-question-prompt-large {
+    font-size: 1.55rem;
+  }
+
+  .tactile-options-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 
-  .option-toy-btn {
-    min-height: 52px;
-    font-size: 1.15rem;
-    padding: 12px 14px;
+  .toy-option-btn {
+    min-height: 56px;
+    padding: 14px 16px;
+  }
+
+  .toy-option-text {
+    font-size: 1.3rem;
+  }
+
+  .quiz-assist-row {
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .speech-assist-btn, .hint-assist-btn, .skip-assist-btn {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+  }
+
+  .quiz-companion-dock {
+    width: 100%;
+    flex-direction: row;
+    padding: 10px 14px;
+    gap: 12px;
+  }
+
+  .companion-canvas-wrapper {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
   }
 
   .auth-card {
@@ -2761,18 +2848,48 @@ body.dark-mode {
     max-width: 440px;
     padding: 20px 16px;
     border-radius: var(--border-radius-md);
+    max-height: 85vh;
+  }
+
+  .setting-row {
+    padding: 10px 12px;
+  }
+
+  .setting-title {
+    font-size: 0.9rem;
+  }
+
+  .setting-desc {
+    font-size: 0.75rem;
+  }
+
+  .child-feedback-banner {
+    font-size: 1rem;
+    padding: 10px 14px;
   }
 }
 
 /* Very Small Mobile Screens (<= 480px) */
 @media screen and (max-width: 480px) {
-  .nav-brand-title {
+  .brand-title {
     font-size: 0.95rem;
   }
 
-  .nav-btn {
-    padding: 6px 10px;
+  .brand-logo-badge {
+    width: 36px;
+    height: 36px;
+  }
+
+  .icon-btn, .toy-nav-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .coin-pill,
+  .streak-pill {
+    padding: 4px 8px;
     font-size: 0.8rem;
+    gap: 4px;
   }
 
   .dashboard-stats-row {
@@ -2803,6 +2920,409 @@ body.dark-mode {
     width: 100%;
     justify-content: center;
   }
+
+  .modal-card {
+    padding: 16px 12px;
+    max-height: 80vh;
+  }
+
+  .quiz-exit-button {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+  }
+
+  .quiz-exit-button span {
+    display: none;
+  }
 }
+
+/* ─── Scratchpad Assist Button ──────────────────────────────── */
+.scratchpad-assist-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+  box-shadow: 0 3px 0 #22c55e;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #15803d;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.scratchpad-assist-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 #22c55e;
+  background: #dcfce7;
+}
+
+.scratchpad-assist-btn:active,
+.scratchpad-assist-btn.active {
+  background: #22c55e;
+  color: #ffffff;
+  border-color: #16a34a;
+  box-shadow: 0 1px 0 #15803d;
+  transform: translateY(1px);
+}
+
+.dark-mode .scratchpad-assist-btn,
+.high-contrast .scratchpad-assist-btn {
+  background: #052e16;
+  border-color: #22c55e;
+  box-shadow: 0 3px 0 #14532d;
+  color: #86efac;
+}
+
+.dark-mode .scratchpad-assist-btn.active {
+  background: #22c55e;
+  color: #052e16;
+}
+
+/* ─── Keyboard Hotkey Badges on Option Buttons ─────────────── */
+.toy-key-badge {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  color: currentColor;
+  opacity: 0.75;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dark-mode .toy-key-badge,
+.high-contrast .toy-key-badge {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.9;
+}
+
+/* ─── In-Quiz Math Scratchpad Panel ────────────────────────── */
+.math-scratchpad-panel {
+  width: 100%;
+  margin: 12px 0 16px 0;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 2.5px dashed #3b82f6;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: scratchpad-open 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scratchpad-open {
+  from { opacity: 0; transform: scaleY(0.92); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+
+.scratchpad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--color-surface-subtle);
+  border-bottom: 1.5px solid var(--color-border);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scratchpad-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.scratchpad-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scratchpad-tool-btn {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-main);
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.12s ease;
+  touch-action: manipulation;
+}
+
+.scratchpad-tool-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.scratchpad-tool-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.scratchpad-tool-btn.danger {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.scratchpad-tool-btn.danger:hover {
+  background: #fee2e2;
+}
+
+.scratchpad-tool-btn.close-btn {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.scratchpad-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #ffffff;
+  cursor: crosshair;
+}
+
+.dark-mode .scratchpad-canvas-container {
+  background: #0f172a;
+}
+
+.scratchpad-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.scratchpad-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.85rem;
+  color: #94a3b8;
+  opacity: 0.35;
+  pointer-events: none;
+  font-style: italic;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ─── Printable Certificate & Print Button ─────────────────── */
+.certificate-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--border-radius-pill);
+  background: #f0fdf4;
+  border: 2.5px solid #22c55e;
+  box-shadow: 0 4px 0 #16a34a;
+  color: #15803d;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.certificate-print-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #16a34a;
+  background: #dcfce7;
+}
+
+.certificate-print-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #16a34a;
+}
+
+.dark-mode .certificate-print-btn,
+.high-contrast .certificate-print-btn {
+  background: #052e16;
+  border-color: #22c55e;
+  box-shadow: 0 4px 0 #14532d;
+  color: #86efac;
+}
+
+/* Hidden in screen view */
+.printable-certificate {
+  display: none;
+}
+
+/* Print Stylesheet */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide everything on screen except certificate */
+  .top-nav-bar,
+  .summary-card,
+  .confetti-container,
+  .quiz-top-bar,
+  .quiz-arena-row,
+  .math-scratchpad-panel,
+  .comfort-modal-backdrop {
+    display: none !important;
+  }
+
+  .printable-certificate {
+    display: block !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    padding: 30px !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+  }
+
+  .cert-border {
+    border: 8px double #ca8a04;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .cert-inner-border {
+    border: 2px solid #eab308;
+    padding: 36px 28px;
+    text-align: center;
+    border-radius: 8px;
+    background: #fffdf5;
+  }
+
+  .cert-academy-title {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #b45309;
+    letter-spacing: 2px;
+  }
+
+  .cert-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #1e3a8a;
+    margin: 12px 0 6px 0;
+    font-family: Georgia, serif;
+  }
+
+  .cert-subtitle {
+    font-size: 1.05rem;
+    color: #475569;
+    font-style: italic;
+  }
+
+  .cert-recipient {
+    margin: 28px 0;
+  }
+
+  .cert-learner-name {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #1d4ed8;
+    text-transform: capitalize;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .cert-underline {
+    width: 280px;
+    height: 3px;
+    background: #3b82f6;
+    margin: 6px auto 0 auto;
+  }
+
+  .cert-body {
+    font-size: 1.15rem;
+    color: #334155;
+    margin: 20px 0;
+  }
+
+  .cert-chapter {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 10px 0;
+  }
+
+  .cert-stars {
+    font-size: 2rem;
+    color: #eab308;
+    letter-spacing: 6px;
+    margin: 12px 0;
+  }
+
+  .cert-score-line {
+    font-size: 1.1rem;
+    color: #1e293b;
+    margin-top: 10px;
+  }
+
+  .cert-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 48px;
+    padding: 0 20px;
+  }
+
+  .cert-footer-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  .cert-signature-line {
+    width: 160px;
+    height: 1.5px;
+    background: #94a3b8;
+  }
+
+  .cert-seal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cert-seal-badge {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px dashed #ca8a04;
+    background: #fef08a;
+    color: #854d0e;
+    font-size: 0.72rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+    box-sizing: border-box;
+    transform: rotate(-12deg);
+  }
+}
+
 
 

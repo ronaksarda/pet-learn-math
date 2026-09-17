@@ -10,6 +10,7 @@
 import React, { useEffect, useState } from 'react';
 import PetDisplay from './PetDisplay.jsx';
 import { useProfile } from '../context/ProfileContext.jsx';
+import { playFanfare } from '../utils/sfx.js';
 
 export default function CompletionSummary({
   results,
@@ -17,13 +18,14 @@ export default function CompletionSummary({
   onPlayAgain,
   previousGrowthStage
 }) {
-  const { profile } = useProfile();
+  const { currentUser, profile } = useProfile();
   const [animTrigger, setAnimTrigger] = useState(null);
   const [showConfetti, setShowConfetti] = useState(true);
 
   const stageEvolved = previousGrowthStage && previousGrowthStage !== profile.growthStage;
 
   useEffect(() => {
+    playFanfare();
     if (stageEvolved) {
       setAnimTrigger('spin-full');
     } else {
@@ -156,6 +158,19 @@ export default function CompletionSummary({
           >
             Return to Academy
           </button>
+          <button
+            type="button"
+            className="certificate-print-btn"
+            onClick={() => window.print()}
+            title="Print Official Certificate of Achievement"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            Print Certificate
+          </button>
           {onPlayAgain && (
             <button
               type="button"
@@ -169,6 +184,54 @@ export default function CompletionSummary({
               Play Again
             </button>
           )}
+        </div>
+      </div>
+
+      {/* ─── Dedicated Printable Certificate (Hidden in normal view, displayed on @media print) ─── */}
+      <div className="printable-certificate" aria-hidden="true">
+        <div className="cert-border">
+          <div className="cert-inner-border">
+            <div className="cert-header">
+              <span className="cert-academy-title">🐾 PET MATH ACADEMY 🐾</span>
+              <h1 className="cert-title">Certificate of Math Mastery</h1>
+              <p className="cert-subtitle">This official certificate is proudly presented to</p>
+            </div>
+
+            <div className="cert-recipient">
+              <h2 className="cert-learner-name">{currentUser || 'Math Champion'}</h2>
+              <div className="cert-underline" />
+            </div>
+
+            <div className="cert-body">
+              <p>For outstanding effort and successfully conquering the math quest:</p>
+              <h3 className="cert-chapter">{results.chapterTitle} ({results.difficulty.toUpperCase()} LEVEL)</h3>
+              <div className="cert-stars">
+                {Array.from({ length: performanceStars }).map((_, idx) => (
+                  <span key={idx} className="cert-star">★</span>
+                ))}
+              </div>
+              <p className="cert-score-line">
+                Earned <strong>+{results.coinsEarned} Coins</strong> and <strong>+{results.xpEarned} XP</strong>
+                {results.perfectScore ? ' with a 100% PERFECT SCORE!' : '!'}
+              </p>
+            </div>
+
+            <div className="cert-footer">
+              <div className="cert-footer-col">
+                <div className="cert-signature-line" />
+                <span>Companion: {profile.petType ? profile.petType.toUpperCase() : 'Pet Partner'}</span>
+              </div>
+              <div className="cert-seal">
+                <div className="cert-seal-badge">
+                  ★ ACADEMY CERTIFIED ★
+                </div>
+              </div>
+              <div className="cert-footer-col">
+                <div className="cert-signature-line" />
+                <span>Date: {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
